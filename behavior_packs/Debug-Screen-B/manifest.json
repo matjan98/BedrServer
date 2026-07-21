@@ -1,0 +1,43 @@
+{
+    "format_version": 2,
+    "header": {
+        "name": "§eStar's Debug Screen §6[V-7.1.1]",
+        "description": "Behaviour pack for Star's debug screen. §dBy: §e@ayy_star",
+        "uuid": "f28f3eb0-f4ef-4237-ab29-85a2d7606192",
+        "version": [7, 1, 1],
+        "min_engine_version": [1, 21, 124]
+    },
+    "modules": [
+        {
+            "type": "data",
+            "uuid": "9112a8b6-659d-4eb8-b381-75855ce0d0b1",
+            "version": [1, 0, 0]
+        },
+        {
+            "type": "script",
+            "language": "javascript",
+            "uuid": "ffbce532-0f9c-4490-bd01-96a261dfa3cc",
+            "version": [1, 0, 0],
+            "entry": "scripts/debug_main.js"
+        }
+    ],
+    "dependencies": [
+        {
+            "uuid": "d25a46e7-6daf-45b2-8687-dd21fb8dbf3d",
+            "version": [7, 1, 0]
+        },
+        {
+            "module_name": "@minecraft/server",
+            "version": "2.3.0"
+        },
+        {
+            "module_name": "@minecraft/server-ui",
+            "version": "2.0.0"
+        }
+    ],
+    "metadata": {
+        "authors": ["ayy star"],
+        "url": "https://www.youtube.com/@ayy_star",
+        "product_type": "addon"
+    }
+}
