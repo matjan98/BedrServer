@@ -1,0 +1,12 @@
+import { DebugDisplayTextElement } from './DebugDisplayTextElement.js';
+import { Vector } from '../../../lib/Vector.js';
+import { TicksPerSecond } from '@minecraft/server';
+
+export class Speed extends DebugDisplayTextElement {
+    getFormattedData() {
+        const speed = Vector.from(this.entity.getVelocity());
+        const blocksPerTick = speed.length;
+        const blocksPerSecond = blocksPerTick * TicksPerSecond;
+        return `§7${blocksPerSecond.toFixed(4)} m/s`;
+    }
+}
