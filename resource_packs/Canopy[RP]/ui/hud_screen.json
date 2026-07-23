@@ -20,9 +20,17 @@
 					"shadow": true,
 					"bindings": [
 						{
+							"binding_name": "#hud_title_text_string"
+						},
+						{
 							"binding_name": "#hud_title_text_string",
 							"binding_name_override": "#text",
 							"binding_type": "global"
+						},
+						{
+							"binding_type": "view",
+							"source_property_name": "(not (('%.1s' * #hud_title_text_string) = '!'))",
+							"target_property_name": "#visible"
 						}
 					]
 				}
