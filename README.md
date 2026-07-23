@@ -87,9 +87,16 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
 - Pętla gry BDS = 20 ticków/s, w dużej mierze jednowątkowa; zdrowie serwera monitoruj przez
   `./info tps true` (TPS < 20 = serwer nie wyrabia).
 - **Każdy gracz i każdy bot Understudy utrzymuje bańkę symulacji o promieniu `tick-distance`**
-  ((2r+1)² chunków; przy r=12 to 625 chunków NA GRACZA). Rozproszone boty = osobne bańki
-  (spawny mobów + tick chunków + skrypt per bot co tick). Dziesiątki rozproszonych botów wymagają
-  `tick-distance` 4–6; boty zgrupowane współdzielą bańki i są prawie darmowe.
+  (romb/taxicab: 2r(r+1)+1 chunków; r=4 → 41, r=6 → 85, r=12 → 313 chunków NA GRACZA).
+  Rozproszone boty = osobne bańki (spawny mobów + tick chunków + skrypt per bot co tick).
+  Dziesiątki rozproszonych botów wymagają `tick-distance` 4–6; boty zgrupowane współdzielą bańki.
+  Uwaga: globalny cap naturalnych spawnów to ~200 mobów NA ŚWIAT — rozproszone boty
+  rozcieńczają dropy farm (grupuj boty przy farmach).
+- Skrypty (Canopy/Understudy, QuickJS bez JIT) wykonują się NA GŁÓWNYM WĄTKU w ticku;
+  watchdog: spike >100 ms/tick = warning, pamięć skryptów >250 MB (`script-watchdog-memory-limit`)
+  = **serwer sam się zapisuje i WYŁĄCZA** (limit można podnieść do 2000).
+- Leaki RAM BDS są udokumentowane (BDS-14781/17567) — przy pracy 24/7 okresowy restart to higiena.
+- Backup bez zatrzymywania serwera: `save hold` → `save query` → kopiowanie → `save resume`.
 - `view-distance` wpływa tylko na to, co widać (client-side-chunk-generation włączone),
   `tick-distance` na to, co żyje — farmy działają tylko w tikowanych chunkach.
 - `max-threads=0` = użyj wszystkich wątków CPU (generowanie terenu itp.).
