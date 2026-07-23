@@ -82,6 +82,21 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
     lista botów nie została ani razu zapisana przy poprawnym zamknięciu (`stop`); znika po pierwszym
     pełnym cyklu bot → stop → start. Wraca po twardym ubiciu procesu.
 
+## Wydajność (laptop Gigabyte G6 KF: i7-13620H 6P+4E, 32 GB DDR5, NVMe)
+
+- Pętla gry BDS = 20 ticków/s, w dużej mierze jednowątkowa; zdrowie serwera monitoruj przez
+  `./info tps true` (TPS < 20 = serwer nie wyrabia).
+- **Każdy gracz i każdy bot Understudy utrzymuje bańkę symulacji o promieniu `tick-distance`**
+  ((2r+1)² chunków; przy r=12 to 625 chunków NA GRACZA). Rozproszone boty = osobne bańki
+  (spawny mobów + tick chunków + skrypt per bot co tick). Dziesiątki rozproszonych botów wymagają
+  `tick-distance` 4–6; boty zgrupowane współdzielą bańki i są prawie darmowe.
+- `view-distance` wpływa tylko na to, co widać (client-side-chunk-generation włączone),
+  `tick-distance` na to, co żyje — farmy działają tylko w tikowanych chunkach.
+- `max-threads=0` = użyj wszystkich wątków CPU (generowanie terenu itp.).
+- Laptop: na czas serwowania plan zasilania „Wysoka wydajność", zasilacz podpięty,
+  **zamknięcie klapy ustawić na „nic nie rób"** (uśpienie = ubity serwer bez zapisu).
+- Git z historią świata rośnie — pilnuj wolnego miejsca na C: (2026-07-23: 95 GB wolne).
+
 ## Historia: Star's Debug Screen (USUNIĘTY 2026-07-23)
 
 Paczki `Debug-Screen-B` (BP 7.1.1) i `Debug-Screen-R` (RP 7.1.0) zostały **całkowicie usunięte**
