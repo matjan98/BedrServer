@@ -68,6 +68,22 @@ Star's Debug Screen i InfoDisplay Canopy (`./info …`) nadal współdzielą kan
 się nawzajem (~10×/s) — **używaj jednego wyświetlacza danych naraz**. Obie paczki mogą być
 stale zainstalowane; chodzi tylko o jednoczesne włączenie obu HUD-ów (migotanie).
 
+## ⚠️ ZNANY PROBLEM: Star's Debug Screen martwy na kliencie 1.26.33 (stan: 2026-07-23)
+
+Klient Minecraft zaktualizował się automatycznie do **1.26.3301.0** i pola danych Star's Debug
+Screena przestały się renderować (F8 przełącza tylko paperdolla — panele są puste). Zweryfikowano
+w grze: serwer nadaje strumień danych poprawnie (payload `!…` co 2 ticki), ręczne wstrzyknięcie
+payloadu `/title @s title !TEST` przy widocznych panelach też nic nie renderuje → **parsowanie
+tytułu w hud_screen.json paczki (triki stringowe `'%.Ns' *`) nie działa na silniku UI 26.33**.
+To NIE jest problem serwera ani naszego patcha (niezależna paczka/plik).
+
+- Addon (v7.1.1) ostatnio aktualizowany 2025-12-03 — czekamy na wersję pod 26.3x
+  (strona: curseforge.com/minecraft-bedrock/addons/stars-debug-screen, Discord: „Star's Studio").
+- Zamiennik do tego czasu: InfoDisplay Canopy — `./info menu` lub `./info coords true`
+  (uwaga: przy aktywnym strumieniu Star'sa etykieta może migotać — patrz sekcja patcha).
+- Po wydaniu nowej wersji Star'sa: zainstalować, sprawdzić czy nadal używa kanału tytułów —
+  jeżeli tak, patch Canopy [RP] pozostaje potrzebny.
+
 ## Przydatne fakty administracyjne
 
 - Wersję BDS najpewniej odczytasz z NBT `lastOpenedWithVersion` w `worlds/moj_swiat/level.dat`
