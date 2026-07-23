@@ -103,6 +103,9 @@ do world_*_packs.json, a do patcha Canopy [RP] dopisz z powrotem filtr ukrywają
 - Ścieżki z `[BP]`/`[RP]` w PowerShellu wymagają `-LiteralPath` (nawiasy to wildcardy!).
 - BDS zamyka się **poprawnie** przy EOF na stdin oraz przy Ctrl+C; konsola przez pipe'y wymaga
   drenowania stdout i stderr (inaczej deadlock przy włączonym content-log-console-output).
+- **Serwer zatrzymuj komendą `stop` (lub Ctrl+C), NIE zamykaj okna konsoli na X** — Windows daje
+  wtedy tylko ~5 s na zapis i twardo ubija proces (ryzyko uciętego zapisu świata; ginie też
+  zapis listy botów `simplayerRejoining`).
 - `./canopy …` (komendy czatowe Canopy) wymagają uprawnień operatora; `/simplayer:*` — nie.
 - Klient nakłada wyłącznie paczki wymienione przez serwer w stacku — kopie w cache klienta
   są nieaktywne, dopóki żaden świat ich nie żąda.
