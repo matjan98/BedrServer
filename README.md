@@ -60,6 +60,22 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
    w Pack Stack, `[Canopy] Registered Understudy …`, brak błędów zależności.
 6. Test w grze: `./info coords true`, F8 chowa/pokazuje. Commit + push.
 
+## Understudy — symulowani gracze (ściąga)
+
+- Dodanie bota: `/simplayer:join <nazwa>` (bez OP). Usunięcie: `/simplayer:leave <nazwa>`
+  **albo po prostu zabij bota** — śmierć automatycznie wyrejestrowuje go na stałe
+  (`scripts/classes/Understudies.js`, handler `entityDie`).
+- Pozostałe komendy: `/simplayer:tp | move | look | sneak | sprint | action | inventory |
+  swapheld | select | stop | rejoin | claimprojectiles | prefix`.
+- **Trwałość po restarcie serwera**: reguła `./canopy simplayerRejoining true` (jednorazowo, OP).
+  Przy poprawnym zamknięciu serwera (`stop`/Ctrl+C) lista aktywnych botów zapisuje się w świecie;
+  po restarcie boty wracają na ostatnią pozycję z ekwipunkiem — ale dopiero, gdy pierwszy
+  prawdziwy gracz wejdzie na serwer (skrypty startują razem ze światem).
+  Reguły `noSimplayerSaving` nie włączać (wyłączyłaby zapis pozycji/ekwipunku).
+  Po twardym ubiciu procesu (crash/kill) lista może być nieaktualna.
+- InfoDisplay (pozycja itp.): `./info coords true` raz, potem **F8** pokazuje/ukrywa (patrz patch wyżej);
+  pełne menu przełączników: `./info menu`.
+
 ## Historia: Star's Debug Screen (USUNIĘTY 2026-07-23)
 
 Paczki `Debug-Screen-B` (BP 7.1.1) i `Debug-Screen-R` (RP 7.1.0) zostały **całkowicie usunięte**
