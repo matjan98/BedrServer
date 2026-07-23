@@ -7,88 +7,80 @@ commity gitowe pełnią rolę backupów świata i konfiguracji.
 
 | Dodatek | Wersja bazowa | Uwagi |
 |---|---|---|
-| Canopy [BP]+[RP] (ForestOfLight) | 1.5.7 | RP ma **lokalny patch** → wersja podbita do **1.5.8** (patrz niżej) |
+| Canopy [BP]+[RP] (ForestOfLight) | 1.5.7 | RP ma **lokalny patch** → wersja podbita do **1.5.9** (patrz niżej) |
 | Understudy (ForestOfLight) | 1.2.3 | rozszerzenie Canopy; symulowani gracze `/simplayer:*` |
-| Star's Debug Screen (@ayy_star) | BP 7.1.1 / RP 7.1.0 | debug HUD w stylu F3 |
 
 Wymagania: świat musi mieć włączony eksperyment **Beta APIs** (flaga `gametest` w `level.dat`) —
 bez niego skrypty Canopy i Understudy w ogóle się nie ładują (`./canopy …` leci jako zwykły czat,
 `/simplayer:*` = „Unknown command").
 
-## ⚠️ LOKALNY PATCH: Canopy [RP] — konflikt tytułów ze Star's Debug Screen
+## ⚠️ LOKALNY PATCH: Canopy [RP] — InfoDisplay przełączany klawiszem F8
 
-**Problem:** oba dodatki przesyłają dane do klienta przez tytuł ekranu (`setTitle`).
-Star's Debug Screen dopełnia pola wykrzyknikami (`padStart(100, "!")` w
-`behavior_packs/Debug-Screen-B/scripts/debug_main.js`), a Canopy [RP] podmienia kontrolkę
-`hud_title_text` na własną etykietę (InfoDisplay), która renderuje surowy tekst tytułu.
-Bez patcha: na górze ekranu widać rząd wykrzykników `!!!!…` (surowy pakiet danych Star'sa).
+**Cel:** wyświetlacz danych Canopy (InfoDisplay, np. współrzędne po `./info coords true`)
+ma być chowany/pokazywany jednym klawiszem.
 
-**Patch:** w `resource_packs/Canopy[RP]/ui/hud_screen.json`, w kontrolce
-`hud_title_text` → `controls` → `title` → `bindings`, dodane są dwa wpisy (subskrypcja +
-warunek widoczności) — etykieta Canopy ukrywa się, gdy tytuł zaczyna się od `!`:
+**Mechanizm:** w `resource_packs/Canopy[RP]/ui/hud_screen.json`, w kontrolce
+`hud_title_text` → `controls` → `title` → `bindings`, dodany jest binding wiążący widoczność
+etykiety z widocznością paperdolla:
 
 ```json
 {
-    "binding_name": "#hud_title_text_string"
-},
-{
-    "binding_type": "view",
-    "source_property_name": "(not (('%.1s' * #hud_title_text_string) = '!'))",
-    "target_property_name": "#visible"
+    "binding_name": "#paper_doll_visible",
+    "binding_name_override": "#visible",
+    "binding_type": "global"
 }
 ```
 
-Dodatkowo — żeby klienci nie używali starej kopii z cache — wersja RP jest podbita o +1
-względem oryginału, spójnie w **trzech** miejscach:
+**F8** (= przełącznik „Ukryj kukłę postaci" / Hide Paperdoll) pokazuje i chowa InfoDisplay.
+Ustawienia `./info …` są per-gracz i trwałe — raz włączone `coords` zostaje na zawsze,
+F8 steruje tylko widocznością po stronie klienta.
+Efekt uboczny: zwykłe tytuły `/title` też są widoczne tylko przy włączonym paperdollu
+(na prywatnym serwerze bez znaczenia).
 
-1. `resource_packs/Canopy[RP]/manifest.json` → `header.version` = `[1, 5, 8]`
-2. `behavior_packs/Canopy[BP]/manifest.json` → `dependencies` (uuid `bcf34368-…`) = `[1, 5, 8]`
-3. `worlds/moj_swiat/world_resource_packs.json` → wpis `bcf34368-…` = `[1, 5, 8]`
+Wersja RP jest podbita o +2 względem oryginału (historia: 1.5.8 = filtr „!" dla Star'sa,
+1.5.9 = obecny binding paperdolla), spójnie w **trzech** miejscach:
+
+1. `resource_packs/Canopy[RP]/manifest.json` → `header.version` = `[1, 5, 9]`
+2. `behavior_packs/Canopy[BP]/manifest.json` → `dependencies` (uuid `bcf34368-…`) = `[1, 5, 9]`
+3. `worlds/moj_swiat/world_resource_packs.json` → wpis `bcf34368-…` = `[1, 5, 9]`
 
 ### 🔁 Procedura przy KAŻDEJ aktualizacji Canopy
 
 Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba go nałożyć ponownie:
 
 1. Zainstaluj nowe Canopy [BP] + [RP] (np. 1.6.0).
-2. W nowym `Canopy[RP]/ui/hud_screen.json` dodaj powyższe bindingi do etykiety `title`
-   w `hud_title_text` (jeżeli autor zmienił strukturę — zasada: etykieta renderująca
-   `#hud_title_text_string` ma być ukryta, gdy pierwszy znak tytułu to `!`).
+2. W nowym `Canopy[RP]/ui/hud_screen.json` dodaj powyższy binding `#paper_doll_visible`
+   do etykiety `title` w `hud_title_text`.
 3. Podbij `header.version` RP o +1 względem wydania autora (np. 1.6.0 → 1.6.1)
    i ustaw tę samą wersję w zależności w manifeście BP oraz w
    `worlds/moj_swiat/world_resource_packs.json` (BP w `world_behavior_packs.json`
-   zostaje z oficjalną wersją BP).
+   zostaje z oficjalną wersją BP). Bez podbicia wersji klient użyje starej kopii z cache!
 4. Sprawdź, czy nowy Understudy wymaga tej wersji Canopy BP (dependency w jego manifeście).
-5. Kontrolowany start serwera → w logu mają być: `Experiment(s) active: gtst`, wszystkie paczki
+5. Kontrolowany start serwera → w logu mają być: `Experiment(s) active: gtst`, obie paczki
    w Pack Stack, `[Canopy] Registered Understudy …`, brak błędów zależności.
-6. Commit + push.
+6. Test w grze: `./info coords true`, F8 chowa/pokazuje. Commit + push.
 
-### Ograniczenie (nie do obejścia patchem)
+## Historia: Star's Debug Screen (USUNIĘTY 2026-07-23)
 
-Star's Debug Screen i InfoDisplay Canopy (`./info …`) nadal współdzielą kanał tytułu i nadpisują
-się nawzajem (~10×/s) — **używaj jednego wyświetlacza danych naraz**. Obie paczki mogą być
-stale zainstalowane; chodzi tylko o jednoczesne włączenie obu HUD-ów (migotanie).
+Paczki `Debug-Screen-B` (BP 7.1.1) i `Debug-Screen-R` (RP 7.1.0) zostały **całkowicie usunięte**
+z serwera (foldery + wpisy w `world_*_packs.json`). Powody:
+1. Addon przestał renderować dane na kliencie **1.26.33** (silnik UI ubił triki stringowe
+   `'%.Ns' *` w jego hud_screen.json; autor nie aktualizował od 2025-12-03).
+2. Konflikt kanału tytułów z InfoDisplay Canopy (oba dodatki przesyłały dane przez `setTitle`).
 
-## ⚠️ ZNANY PROBLEM: Star's Debug Screen martwy na kliencie 1.26.33 (stan: 2026-07-23)
-
-Klient Minecraft zaktualizował się automatycznie do **1.26.3301.0** i pola danych Star's Debug
-Screena przestały się renderować (F8 przełącza tylko paperdolla — panele są puste). Zweryfikowano
-w grze: serwer nadaje strumień danych poprawnie (payload `!…` co 2 ticki), ręczne wstrzyknięcie
-payloadu `/title @s title !TEST` przy widocznych panelach też nic nie renderuje → **parsowanie
-tytułu w hud_screen.json paczki (triki stringowe `'%.Ns' *`) nie działa na silniku UI 26.33**.
-To NIE jest problem serwera ani naszego patcha (niezależna paczka/plik).
-
-- Addon (v7.1.1) ostatnio aktualizowany 2025-12-03 — czekamy na wersję pod 26.3x
-  (strona: curseforge.com/minecraft-bedrock/addons/stars-debug-screen, Discord: „Star's Studio").
-- Zamiennik do tego czasu: InfoDisplay Canopy — `./info menu` lub `./info coords true`
-  (uwaga: przy aktywnym strumieniu Star'sa etykieta może migotać — patrz sekcja patcha).
-- Po wydaniu nowej wersji Star'sa: zainstalować, sprawdzić czy nadal używa kanału tytułów —
-  jeżeli tak, patch Canopy [RP] pozostaje potrzebny.
+Odzyskanie: pełne pliki paczek są w historii gita (commit `f4b714b` i wcześniejsze).
+Przy ewentualnym powrocie (po aktualizacji autora pod 26.3x+): przywróć foldery, dodaj wpisy
+do world_*_packs.json, a do patcha Canopy [RP] dopisz z powrotem filtr ukrywający payloady „!":
+`{"binding_type": "view", "source_property_name": "(not (('%.1s' * #hud_title_text_string) = '!'))", "target_property_name": "#visible"}`
+(o ile silnik UI znów wspiera te operatory) i podbij wersję RP.
 
 ## Przydatne fakty administracyjne
 
 - Wersję BDS najpewniej odczytasz z NBT `lastOpenedWithVersion` w `worlds/moj_swiat/level.dat`
   (binarka `bedrock_server.exe` nie ma VersionInfo).
 - Ścieżki z `[BP]`/`[RP]` w PowerShellu wymagają `-LiteralPath` (nawiasy to wildcardy!).
-- BDS zamyka się **poprawnie** przy EOF na stdin; konsola przez pipe'y wymaga drenowania
-  stdout i stderr (inaczej deadlock przy włączonym content-log-console-output).
+- BDS zamyka się **poprawnie** przy EOF na stdin oraz przy Ctrl+C; konsola przez pipe'y wymaga
+  drenowania stdout i stderr (inaczej deadlock przy włączonym content-log-console-output).
 - `./canopy …` (komendy czatowe Canopy) wymagają uprawnień operatora; `/simplayer:*` — nie.
+- Klient nakłada wyłącznie paczki wymienione przez serwer w stacku — kopie w cache klienta
+  są nieaktywne, dopóki żaden świat ich nie żąda.
