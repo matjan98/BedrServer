@@ -75,6 +75,12 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
   Po twardym ubiciu procesu (crash/kill) lista może być nieaktualna.
 - InfoDisplay (pozycja itp.): `./info coords true` raz, potem **F8** pokazuje/ukrywa (patrz patch wyżej);
   pełne menu przełączników: `./info menu`.
+- **Normalne wpisy w logu startowym (nie naprawiać):**
+  - `WARN … Custom Command alias [tp]/[stop]/[claimprojectiles] already in use` — silnik nie może
+    wystawić skrótów bez prefiksu (zajęte przez vanilla/Canopy); pełne nazwy `/simplayer:*` działają.
+  - `ERROR [SimplayerRejoining] Error parsing simplayersToRejoin DP` — pojawia się tylko, dopóki
+    lista botów nie została ani razu zapisana przy poprawnym zamknięciu (`stop`); znika po pierwszym
+    pełnym cyklu bot → stop → start. Wraca po twardym ubiciu procesu.
 
 ## Historia: Star's Debug Screen (USUNIĘTY 2026-07-23)
 
