@@ -131,6 +131,20 @@ do world_*_packs.json, a do patcha Canopy [RP] dopisz z powrotem filtr ukrywają
 - **Nie uruchamiaj dwóch instancji serwera na tym samym świecie** i nie ubijaj procesu twardo —
   to główne przyczyny uszkodzenia bazy LevelDB.
 
+### Bezpieczny launcher: `Start-Server.bat` (wyłączony krzyżyk X)
+
+Żeby nie dało się przypadkowo ubić serwera myszką, uruchamiaj go przez **`Start-Server.bat`**
+(dwuklik). Launcher (`start_server.ps1`) usuwa „Zamknij" z menu systemowego okna → **krzyżyk (X)
+i Alt+F4 są nieaktywne, dopóki serwer działa**. Jedyny sposób zatrzymania to wpisanie `stop`.
+Po `stop` X wraca do działania i okno można normalnie zamknąć.
+
+Aby uruchamiać z pulpitu: zrób skrót do `C:\BedrServer\Start-Server.bat` (albo przepnij istniejący
+skrót „SERVER" na ten plik).
+
+Ograniczenia (X to zabezpieczenie przed *przypadkiem*, nie przed wszystkim): zabicie przez
+Menedżer zadań, wylogowanie/restart Windows czy zanik zasilania nadal ubiją proces. Dlatego
+**ostateczną siatką bezpieczeństwa pozostają commity świata do gita** — rób je po sesjach.
+
 ## ⚠️ Incydent 2026-07-24: uszkodzenie i odzysk świata
 
 Objaw: dziura przy bazie + zniknięte farmy (lokalna regeneracja chunków).
