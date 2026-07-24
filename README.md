@@ -128,6 +128,24 @@ do world_*_packs.json, a do patcha Canopy [RP] dopisz z powrotem filtr ukrywają
 - **Serwer zatrzymuj komendą `stop` (lub Ctrl+C), NIE zamykaj okna konsoli na X** — Windows daje
   wtedy tylko ~5 s na zapis i twardo ubija proces (ryzyko uciętego zapisu świata; ginie też
   zapis listy botów `simplayerRejoining`).
+- **Nie uruchamiaj dwóch instancji serwera na tym samym świecie** i nie ubijaj procesu twardo —
+  to główne przyczyny uszkodzenia bazy LevelDB.
+
+## ⚠️ Incydent 2026-07-24: uszkodzenie i odzysk świata
+
+Objaw: dziura przy bazie + zniknięte farmy (lokalna regeneracja chunków).
+Przyczyna: **brudne zamknięcia serwera** podczas serii testów 23.07 (twarde ubicia procesu
+między 02:24 a 18:04) → uszkodzenie kilku chunków w LevelDB → regeneracja na świeżo.
+NIE było to spowodowane włączeniem Beta APIs (migawka 02:24 z Beta APIs była zdrowa).
+
+Odzysk (bo repo = backup): przywrócono zdrowe pliki świata z commita `b3c168f` (23.07 02:24),
+zachowując aktualny konfig paczek (`git checkout b3c168f -- worlds/moj_swiat`, potem
+`git checkout HEAD -- worlds/moj_swiat/world_*_packs.json`), weryfikacja kontrolowanym startem.
+Uszkodzony stan pozostaje w historii jako `4b39f56` (na wypadek chirurgicznego odzysku
+nowszych budowli z uszkodzonej wersji).
+
+**Wniosek na przyszłość:** commituj świat po każdej sesji (git to jedyna siatka bezpieczeństwa),
+zawsze zamykaj przez `stop`, jedna instancja serwera naraz.
 - `./canopy …` (komendy czatowe Canopy) wymagają uprawnień operatora; `/simplayer:*` — nie.
 - Klient nakłada wyłącznie paczki wymienione przez serwer w stacku — kopie w cache klienta
   są nieaktywne, dopóki żaden świat ich nie żąda.
