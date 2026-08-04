@@ -7,12 +7,35 @@ commity gitowe pełnią rolę backupów świata i konfiguracji.
 
 | Dodatek | Wersja bazowa | Uwagi |
 |---|---|---|
-| Canopy [BP]+[RP] (ForestOfLight) | 1.5.7 | RP ma **lokalny patch** → wersja podbita do **1.5.9** (patrz niżej) |
-| Understudy (ForestOfLight) | 1.2.3 | rozszerzenie Canopy; symulowani gracze `/simplayer:*` |
+| Canopy [BP]+[RP] (ForestOfLight) | 1.5.7 | RP ma **lokalny patch** → wersja podbita do **1.5.9** (patrz niżej); BP ma **lokalnie podbitą zależność** script API (patrz niżej) |
+| Understudy (ForestOfLight) | 1.2.3 | rozszerzenie Canopy; symulowani gracze `/simplayer:*`; ta sama podbita zależność |
 
 Wymagania: świat musi mieć włączony eksperyment **Beta APIs** (flaga `gametest` w `level.dat`) —
 bez niego skrypty Canopy i Understudy w ogóle się nie ładują (`./canopy …` leci jako zwykły czat,
 `/simplayer:*` = „Unknown command").
+
+### ⚠️ Zależność `@minecraft/server` unieważnia się przy KAŻDYM wydaniu Minecrafta
+
+Mojang trzyma **tylko jedną aktywną wersję beta** każdego modułu skryptowego. Gdy `X.Y.0-beta`
+awansuje do stabilnej `X.Y.0`, łańcuch `X.Y.0-beta` **przestaje istnieć** i paczka, która go żąda,
+nie ładuje się wcale. Dlatego ForestOfLight wypuszcza nowe Canopy pod każdą wersję MC
+(„v1.5.7 for MC 26.30", „v1.5.6 for MC 26.20" …).
+
+Stan na 2026-08-04 (MC 26.40): wydania Canopy pod 26.40 jeszcze nie było, więc zależność jest
+**podbita ręcznie** w obu manifestach BP:
+
+```
+"module_name": "@minecraft/server",  "version": "2.10.0-beta"     (autor daje 2.9.0-beta)
+```
+
+Reszta zależności została bez zmian i działa: `@minecraft/server-ui 2.2.0-beta`,
+`@minecraft/debug-utilities 1.0.0-beta`, `@minecraft/server-gametest 1.0.0-beta`.
+`min_engine_version` `[1, 26, 30]` to minimum, nie trzeba go ruszać.
+
+Gdy wyjdzie oficjalne Canopy pod 26.40 — instaluj je normalnie (procedura patcha F8 niżej),
+ręczne podbicie stanie się zbędne.
+Aktualne wersje modułów sprawdzisz w changelogach:
+`https://github.com/MicrosoftDocs/minecraft-creator/blob/main/creator/ScriptAPI/minecraft/server/changelog.md`.
 
 ## ⚠️ LOKALNY PATCH: Canopy [RP] — InfoDisplay przełączany klawiszem F8
 
@@ -104,6 +127,23 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
   **zamknięcie klapy ustawić na „nic nie rób"** (uśpienie = ubity serwer bez zapisu).
 - Git z historią świata rośnie — pilnuj wolnego miejsca na C: (2026-07-23: 95 GB wolne).
 
+## Historia: aktualizacja 26.32 → 26.40 (2026-08-04)
+
+Klient zaktualizował się przez Store o 18:51 do **1.26.4005.0 (26.40)**, serwer został na
+**1.26.32.2** i zaczął zrywać połączenia na handshake'u. Bedrock 26.40 wyszedł tego samego dnia.
+
+- Serwer podniesiony do **BDS 1.26.40.8** (`bedrock-server-1.26.40.8.zip`, 94 954 789 B,
+  SHA256 `7B649671E1D88F8BD1499C580910F099E27533EFC213F9FAF5A5C68DD41A77C9`).
+- 26.40 wydało `@minecraft/server` **2.9.0** jako stabilne i dodało **2.10.0-beta**, przez co
+  `2.9.0-beta` żądane przez Canopy 1.5.7 i Understudy 1.2.3 zniknęło. Zależność podbita ręcznie
+  do `2.10.0-beta` — skrypty ładują się bez błędów, `[Canopy] Registered Understudy v1.2.3.`
+- `bedrock_server.exe` przestał być śledzony przez gita/LFS (limit 1 GB).
+- Paczka `behavior_packs/vanilla_1.26.32` nie występuje w zipie 26.40 — przeniesiona do kopii.
+- `server.properties`: zestaw 41 kluczy identyczny jak w domyślnym 26.40, nic nie doszło.
+- Przy okazji: pierwszy skrypt testowy nie umiał zatrzymać serwera (pułapka BOM opisana wyżej)
+  i ubił go twardo. Świat przywrócono z kopii sprzed aktualizacji — bez strat, bo na serwerze
+  nie było wtedy żadnego gracza. Stąd nowe ostrzeżenia w „Przydatnych faktach".
+
 ## Historia: Star's Debug Screen (USUNIĘTY 2026-07-23)
 
 Paczki `Debug-Screen-B` (BP 7.1.1) i `Debug-Screen-R` (RP 7.1.0) zostały **całkowicie usunięte**
@@ -118,13 +158,67 @@ do world_*_packs.json, a do patcha Canopy [RP] dopisz z powrotem filtr ukrywają
 `{"binding_type": "view", "source_property_name": "(not (('%.1s' * #hud_title_text_string) = '!'))", "target_property_name": "#visible"}`
 (o ile silnik UI znów wspiera te operatory) i podbij wersję RP.
 
+## Procedura aktualizacji BDS
+
+Klient z Microsoft Store aktualizuje się sam i wtedy **przestaje wchodzić na stary serwer** —
+objaw jest charakterystyczny: w `packet-statistics.txt` widać `RequestNetworkSettingsPacket`
+na wejściu i od razu `PlayStatusPacket` + `DisconnectPacket` na wyjściu (zerwanie na pierwszym
+pakiecie handshake'u = niezgodność protokołu).
+
+**Aktualny link do pobrania bierz z oficjalnego API**, nie ze strony ani z wyszukiwarki:
+
+```powershell
+(Invoke-WebRequest 'https://net-secondary.web.minecraft-services.net/api/v1.0/download/links' -UseBasicParsing |
+  ConvertFrom-Json).result.links | Where-Object downloadType -eq 'serverBedrockWindows' |
+  Select-Object -ExpandProperty downloadUrl
+```
+
+Kroki:
+
+1. **Zatrzymaj serwer** (`stop`) i zrób kopię poza repozytorium: `worlds\`, `server.properties`,
+   `allowlist.json`, `permissions.json`, manifesty Canopy/Understudy, stary `bedrock_server.exe`.
+   To jedyna siatka, jeśli aktualizacja pójdzie źle — **po pierwszym starcie na nowej wersji świat
+   zostaje zmigrowany i powrót na starą wersję nie jest gwarantowany**.
+2. Pobierz zip, sprawdź rozmiar i `Get-FileHash -Algorithm SHA256`, rozpakuj **do folderu
+   roboczego**, nigdy prosto na `C:\BedrServer`.
+3. Skopiuj z paczki: `bedrock_server.exe`, `bedrock_server_how_to.html`, `release-notes.txt`,
+   `packetlimitconfig.json`, `profanity_filter.wlist`, `definitions\`, `data\`, `config\`,
+   `behavior_packs\`, `resource_packs\` (robocopy `/E`, **nigdy `/MIR`** — skasowałby Canopy).
+4. **Nie nadpisuj** `server.properties`, `allowlist.json`, `permissions.json` ani `worlds\`.
+   Zamiast tego porównaj zestaw kluczy naszego `server.properties` z domyślnym z paczki i dopisz
+   te, które doszły (przy 26.32 → 26.40 nie doszedł żaden).
+5. Sprawdź „sieroty": paczki `vanilla_*`/`chemistry_*`, które są lokalnie, a nie ma ich w nowym
+   zipie, przenieś do kopii zapasowej (przy 26.40 taką sierotą był `vanilla_1.26.32`).
+6. Podbij zależność `@minecraft/server` w manifestach Canopy i Understudy, jeśli nie ma jeszcze
+   wydania autora pod nową wersję MC (patrz sekcja o script API wyżej).
+7. Kontrolowany start i weryfikacja logu — w logu mają być `Version: <nowa>`,
+   `Experiment(s) active: gtst`, obie paczki w Pack Stack, `[Canopy] Registered Understudy …`,
+   brak błędów modułów. Potem wejście klientem, `./info coords true` + F8, `/simplayer:join`.
+8. Commit + push.
+
 ## Przydatne fakty administracyjne
 
 - Wersję BDS najpewniej odczytasz z NBT `lastOpenedWithVersion` w `worlds/moj_swiat/level.dat`
-  (binarka `bedrock_server.exe` nie ma VersionInfo).
+  (binarka `bedrock_server.exe` nie ma VersionInfo). Drugi trop: najwyższa paczka
+  `behavior_packs/vanilla_1.26.*`.
+- **`bedrock_server.exe` nie jest już śledzony przez gita** (od 2026-08-04). Wcześniej szedł przez
+  Git LFS, ale każda aktualizacja BDS zabierała tam na stałe ~200 MB z 1 GB darmowego limitu
+  GitHuba — po kilku aktualizacjach push zacząłby się wywalać na „over data quota". Repo jest
+  backupem **świata i konfiguracji**; binarkę pobierasz na nowo (link w procedurze wyżej).
 - Ścieżki z `[BP]`/`[RP]` w PowerShellu wymagają `-LiteralPath` (nawiasy to wildcardy!).
-- BDS zamyka się **poprawnie** przy EOF na stdin oraz przy Ctrl+C; konsola przez pipe'y wymaga
-  drenowania stdout i stderr (inaczej deadlock przy włączonym content-log-console-output).
+- Konsola przez pipe'y wymaga drenowania stdout **i** stderr (inaczej deadlock przy włączonym
+  `content-log-console-output`).
+- ⚠️ **Pułapka BOM przy sterowaniu serwerem ze skryptu (.NET/PowerShell).** `Process.StandardInput`
+  tworzy `StreamWriter` z `AutoFlush = true`, a setter `AutoFlush` robi natychmiastowy flush —
+  preambuła UTF-8 (`EF BB BF`) leci do potoku **już przy pierwszym odczytaniu właściwości**, zanim
+  cokolwiek napiszesz. Serwer widzi wtedy `Unknown command: ﻿stop` i **się nie zatrzymuje**.
+  Obejście: przed startem procesu ustaw `[Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)`
+  albo po prostu wyślij wiodący `\n`, żeby BOM poszedł jako osobna, śmieciowa linia.
+- ⚠️ **Samo EOF na stdin nie zatrzymuje 26.40 od ręki** — w teście 2026-08-04 serwer zignorował
+  zamknięcie strumienia przez ponad 2 minuty, a wyszedł dopiero ~35 s po zakończeniu procesu
+  rodzica. Jedyne przewidywalne zamknięcie to **komenda `stop`** (albo Ctrl+C w prawdziwej konsoli).
+  Nie ustawiaj w skryptach „timeout → `Kill()`": twarde ubicie uszkadza LevelDB (patrz incydent
+  2026-07-24). Lepiej zostawić wiszący proces i zdiagnozować, niż go zabić.
 - **Serwer zatrzymuj komendą `stop` (lub Ctrl+C), NIE zamykaj okna konsoli na X** — Windows daje
   wtedy tylko ~5 s na zapis i twardo ubija proces (ryzyko uciętego zapisu świata; ginie też
   zapis listy botów `simplayerRejoining`).
