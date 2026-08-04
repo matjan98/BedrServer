@@ -3,3 +3,9 @@
 # i potem skasować te wpisy.
 worlds/moj_swiat_TEST/
 worlds/moj_swiat_TEST2/
+
+# Binarka serwera - nie trzymamy jej w gicie (2026-08-04).
+# Wczesniej szla przez Git LFS, ale kazda aktualizacja BDS zabierala tam na stale ~200 MB
+# z 1 GB darmowego limitu. Repo ma byc backupem SWIATA i konfiguracji, nie binariow.
+# Aktualna wersja do pobrania: patrz "Procedura aktualizacji BDS" w README.md.
+bedrock_server.exe
