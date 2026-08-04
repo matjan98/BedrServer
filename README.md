@@ -34,6 +34,25 @@ Reszta zależności została bez zmian i działa: `@minecraft/server-ui 2.2.0-be
 
 Gdy wyjdzie oficjalne Canopy pod 26.40 — instaluj je normalnie (procedura patcha F8 niżej),
 ręczne podbicie stanie się zbędne.
+
+### ⚠️ LOKALNY PATCH nr 2: Canopy [BP] → `scripts/src/rules/infodisplay/NoFog.js`
+
+Skutek uboczny podbicia na `2.10.0-beta`: z enuma `EntityComponentTypes` **zniknął człon `Fog`**,
+a zastępujące go `FogSettings` pojawia się dopiero w `2.11.0-beta` (26.50-preview) — na 26.40 nie
+ma żadnego API mgły. `getComponent(undefined)` rzucało `InvalidArgumentError` **w konstruktorze**
+`NoFog`, a że `InfoDisplay` tworzy wszystkie elementy w swoim konstruktorze, to:
+
+- `InfoDisplay.playerToInfoDisplayMap[player.id] = this` (linia 82) nigdy się nie wykonywało,
+- `system.runInterval` (linia 200) próbował tworzyć InfoDisplay **od nowa co tick** → ~20 błędów/s,
+- InfoDisplay nie powstawał ani razu, więc **nie było współrzędnych, a F8 nie miał czego pokazywać**.
+
+Patch: `NoFog.resolveFogComponent()` bierze `EntityComponentTypes.Fog ?? 'minecraft:fog'`, opakowuje
+`getComponent` w `try/catch`, a `removeFog`/`resetFog`/`clearFog`/`onDimensionChange` wychodzą
+wcześniej, gdy komponentu nie ma. Reguła `noFog` zostaje widoczna w `./info menu`, ale na 26.40
+nic nie robi — reszta InfoDisplay działa normalnie.
+
+Wersji BP **nie podbijamy** (skrypty chodzą po stronie serwera, nie ma cache klienta — inaczej niż
+przy patchu RP niżej). Ten patch **znika razem ze starą paczką**, gdy zainstalujesz Canopy pod 26.40.
 Aktualne wersje modułów sprawdzisz w changelogach:
 `https://github.com/MicrosoftDocs/minecraft-creator/blob/main/creator/ScriptAPI/minecraft/server/changelog.md`.
 
@@ -143,6 +162,10 @@ Klient zaktualizował się przez Store o 18:51 do **1.26.4005.0 (26.40)**, serwe
 - Przy okazji: pierwszy skrypt testowy nie umiał zatrzymać serwera (pułapka BOM opisana wyżej)
   i ubił go twardo. Świat przywrócono z kopii sprzed aktualizacji — bez strat, bo na serwerze
   nie było wtedy żadnego gracza. Stąd nowe ostrzeżenia w „Przydatnych faktach".
+- Podbicie na `2.10.0-beta` odsłoniło drugi problem: `EntityComponentTypes.Fog` zniknęło z API,
+  przez co konstruktor `NoFog` wywalał cały `InfoDisplay` co tick (brak współrzędnych, F8 bez
+  efektu). Naprawione lokalnym patchem w `Canopy[BP]/scripts/src/rules/infodisplay/NoFog.js`
+  — opis w sekcji „LOKALNY PATCH nr 2".
 
 ## Historia: Star's Debug Screen (USUNIĘTY 2026-07-23)
 
