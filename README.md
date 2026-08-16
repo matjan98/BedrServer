@@ -35,6 +35,10 @@ Reszta zależności została bez zmian i działa: `@minecraft/server-ui 2.2.0-be
 Gdy wyjdzie oficjalne Canopy pod 26.40 — instaluj je normalnie (procedura patcha F8 niżej),
 ręczne podbicie stanie się zbędne.
 
+**Aktualizacja 2026-08-16 (MC 26.44):** bez zmian — `2.10.0-beta` przetrwało wydanie łatkowe,
+manifesty zostały takie same, skrypty ładują się bez błędów. Podbijać trzeba dopiero przy
+następnym **minorze** (26.50), nie przy łatkach linii 26.4x.
+
 ### ⚠️ LOKALNY PATCH nr 2: Canopy [BP] → `scripts/src/rules/infodisplay/NoFog.js`
 
 Skutek uboczny podbicia na `2.10.0-beta`: z enuma `EntityComponentTypes` **zniknął człon `Fog`**,
@@ -145,6 +149,60 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
 - Laptop: na czas serwowania plan zasilania „Wysoka wydajność", zasilacz podpięty,
   **zamknięcie klapy ustawić na „nic nie rób"** (uśpienie = ubity serwer bez zapisu).
 - Git z historią świata rośnie — pilnuj wolnego miejsca na C: (2026-07-23: 95 GB wolne).
+
+## Historia: aktualizacja 26.40 → 26.44 (2026-08-16)
+
+Postawienie serwera na **drugiej maszynie** (świeży `git clone`) połączone z aktualizacją BDS.
+
+- Serwer podniesiony do **BDS 1.26.44.3** (`bedrock-server-1.26.44.3.zip`, 94 996 851 B,
+  SHA256 `1C02222F32256A8B44AD27720C8E1E1D15ABF6705ADF945B62ED48E7480BEF8B`).
+  Z logu: `Build ID: 49326048`, `Branch: r/26_u4`.
+- **1.26.44 to wydanie łatkowe linii 26.40, nie nowy minor** — i to zmienia wszystko na plus:
+  `@minecraft/server 2.10.0-beta` **nadal istnieje**, więc manifestów Canopy i Understudy
+  **nie trzeba było ruszać**. Oba lokalne patche (NoFog, binding paperdolla) przetrwały
+  nietknięte, bo aktualizacja BDS nie dotyka `Canopy[BP]`, `Canopy[RP]` ani `Understudy-*`.
+- `server.properties`: 41 kluczy po obu stronach, **zero różnic** — nic nie doszło.
+- **Sierot brak** — wszystkie paczki `vanilla_*` z repo są też w 26.44. Doszły
+  `behavior_packs/vanilla_1.26.44` i `resource_packs/vanilla_1.26.44`.
+- Kontrolowany start czysty: `Experiment(s) active: gtst`, obie paczki w Pack Stack,
+  `[Canopy] Registered Understudy v1.2.3.`, `Quit correctly`, kod wyjścia 0.
+  Świat zmigrowany do 26.44 — **stary serwer 26.40 już go nie otworzy** (patrz „Praca na
+  dwóch maszynach").
+- Przy okazji: launcher przepisany na ścieżki względne + synchronizację gitową (sekcja
+  „Praca na dwóch maszynach"). Wcześniej `Start-Server.bat` i `start_server.ps1` miały
+  `C:\BedrServer` na sztywno, przez co po sklonowaniu w inne miejsce nie startowały wcale.
+- Pułapka techniczna wyłapana przy pisaniu launchera: **`git` pisze normalne komunikaty na
+  stderr** (`push` praktycznie wszystko), a PowerShell 5.1 opakowuje przechwycony stderr
+  natywnego programu w `ErrorRecord` — przy `$ErrorActionPreference = 'Stop'` wywalało to
+  skrypt mimo kodu wyjścia 0. Helper `Invoke-Git` ustawia u siebie lokalne `'Continue'`
+  i stan sprawdza **wyłącznie** przez `$LASTEXITCODE`.
+- Drobiazg przy rozpakowywaniu: `Expand-Archive` do długiej ścieżki wywala się na limicie
+  260 znaków i **wycofuje całą operację** (zostaje pusty katalog). Rozpakowuj do krótkiej
+  ścieżki, np. `C:\Users\<user>\bds_work\`.
+
+### ⚠️ POTWIERDZONE: `git clone` uszkadzał `worlds/*/db/CURRENT`
+
+Nie hipoteza — zmierzone na tym klonie. Plik `db/CURRENT` po świeżym `git clone`:
+
+```
+kopia zrobiona zaraz po clone :  M A N I F E S T - 0 8 1 7 5 2  \r  \n     <-- doklejone \r
+zawartosc w gicie             :  M A N I F E S T - 0 8 1 7 5 2  \n
+```
+
+`CURRENT` to kilkanaście znaków ASCII bez bajtów NUL, więc git bierze go za plik tekstowy,
+a `core.autocrlf=true` (domyślne w Git for Windows, ustawione na obu maszynach) dokleja mu `\r`
+przy **każdym** `clone`, `checkout` i `reset --hard`. Reszta LevelDB (`.ldb`, `MANIFEST-*`)
+ma bajty NUL i git sam wykrywa je jako binarne — dlatego problem dotyczył wyłącznie tego
+jednego pliku i był niewidoczny w diffie.
+
+BDS 26.44 taki świat **otworzył bez protestu** — LevelDB toleruje nadmiarowy `\r` w `CURRENT`.
+To znaczy, że błąd siedział tam po cichu, a nie że był nieszkodliwy: zależał od pobłażliwości
+parsera, nie od poprawności danych.
+
+Naprawione regułą `worlds/*/db/** binary` w `.gitattributes`. Po niej checkout oddaje bajt
+w bajt to, co jest w gicie. **Jeśli klonowałeś to repo przed 2026-08-16, twój `CURRENT`
+najprawdopodobniej ma `\r`** — wystarczy pobrać tę zmianę i przełożyć plik na nowo
+(`git checkout -- worlds/`), albo pozwolić serwerowi nadpisać go przy najbliższym starcie.
 
 ## Historia: aktualizacja 26.32 → 26.40 (2026-08-04)
 
@@ -258,9 +316,61 @@ Po `stop` X wraca do działania i okno można normalnie zamknąć.
 Aby uruchamiać z pulpitu: zrób skrót do `C:\BedrServer\Start-Server.bat` (albo przepnij istniejący
 skrót „SERVER" na ten plik).
 
+**Ścieżki są względne** (od 2026-08-16): `.bat` używa `%~dp0`, a `start_server.ps1` — `$PSScriptRoot`.
+Katalogiem serwera jest zawsze katalog skryptu, więc repo może leżeć gdziekolwiek i na obu
+maszynach działa identycznie. Nie ma już nic zaszytego na `C:\BedrServer`.
+
+Launcher **odmawia startu, gdy brakuje `bedrock_server.exe`** i wypisuje polecenie pobierające
+aktualny link z oficjalnego API — to pierwsza rzecz, na którą trafisz po świeżym `git clone`.
+
 Ograniczenia (X to zabezpieczenie przed *przypadkiem*, nie przed wszystkim): zabicie przez
 Menedżer zadań, wylogowanie/restart Windows czy zanik zasilania nadal ubiją proces. Dlatego
 **ostateczną siatką bezpieczeństwa pozostają commity świata do gita** — rób je po sesjach.
+
+## Praca na dwóch maszynach (serwer „wędrujący")
+
+Serwer stoi na obu komputerach, a **git jest jedynym kanałem synchronizacji świata**. Grasz tam,
+gdzie akurat siedzisz; po sesji świat jedzie na `origin`, druga maszyna go pobiera przed swoją sesją.
+
+### ⚠️ Dlaczego to wymaga dyscypliny
+
+Świat to baza **LevelDB** — zbiór plików binarnych. Git ich **nie zmerguje**. Jeśli zagrasz na
+maszynie A bez wypchnięcia, a potem na B, dostaniesz rozjazd, którego nie da się połączyć —
+trzeba **wybrać jedną wersję świata i wyrzucić drugą**. Nie ma scenariusza „scalimy postępy".
+
+Stąd jedna zasada: **pobierz przed grą, wypchnij po grze.** Zawsze, na obu maszynach.
+
+### Co launcher robi za ciebie
+
+`start_server.ps1` pilnuje tego sam, więc nie polegasz na pamięci:
+
+| Sytuacja przed startem | Zachowanie |
+|---|---|
+| repo w synchronizacji | startuje normalnie |
+| origin ma nowsze commity | proponuje `git pull --ff-only`, po odmowie **nie startuje** |
+| jesteś w tyle **i** masz niezacommitowane zmiany | **nie startuje**, każe ogarnąć lokalne zmiany |
+| repo rozjechane (i w tył, i w przód) | **nie startuje**, wymaga ręcznej decyzji |
+| masz lokalne commity niewypchnięte | startuje, ostrzega, wypycha po `stop` |
+| brak sieci / `fetch` padł | pyta wprost, czy startować mimo nieznanego stanu |
+
+Po `stop` launcher robi `git add -A`, commituje jako `Sesja <data> (<NAZWA-KOMPUTERA>)` i wypycha
+na `origin`. Jeśli push padnie, commit i tak jest lokalnie — dostaniesz czerwony komunikat, żeby
+wypchnąć ręcznie przed graniem na drugiej maszynie.
+
+Awaryjnie: `Start-Server.bat` uruchomiony z przełącznikiem `-NoSync` (albo bezpośrednio
+`powershell -File start_server.ps1 -NoSync`) pomija cały git — wtedy commitujesz sam.
+
+### ⚠️ Wersja BDS musi się zgadzać na obu maszynach
+
+`bedrock_server.exe` nie jest w repo, więc **git nie zsynchronizuje wersji serwera**. Świat jest
+migrowany w górę przy pierwszym starcie na nowszym BDS i **starszy serwer go już nie otworzy**.
+Kolejność przy aktualizacji jest więc nieprzestawialna:
+
+1. Zaktualizuj BDS na maszynie A, odpal kontrolowanie, zacommituj i wypchnij zmigrowany świat.
+2. **Zanim** maszyna B zrobi `git pull` — zaktualizuj na niej BDS do **tej samej** wersji.
+3. Dopiero wtedy `pull` i granie.
+
+Odwrotna kolejność = maszyna B pobiera świat, którego jej serwer nie umie otworzyć.
 
 ## ⚠️ Incydent 2026-07-24: uszkodzenie i odzysk świata
 

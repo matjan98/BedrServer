@@ -1,3 +1,17 @@
 # bedrock_server.exe NIE jest juz sledzony przez gita ani przez Git LFS (patrz .gitignore).
 # Powod: kazda aktualizacja BDS zjadala ~200 MB z 1 GB darmowego limitu LFS na GitHubie,
 # a binarke zawsze mozna pobrac na nowo od Mojanga (link w README.md).
+
+# ---------------------------------------------------------------------------
+# SWIAT = baza LevelDB. NIGDY nie konwertowac koncow linii w db/ (2026-08-16).
+#
+# Wiekszosc plikow LevelDB (.ldb, MANIFEST-*) ma bajty NUL, wiec git sam wykrywa
+# je jako binarne. ALE plik 'db/CURRENT' to kilkanascie znakow ASCII zakonczonych
+# \n i git bierze go za tekst. Przy core.autocrlf=true (domyslne w Git for Windows,
+# ustawione na obu maszynach) git doklada mu \r przy KAZDYM checkoucie, klonie
+# i reset --hard. Objaw: swiat, ktory dziala u ciebie, po swiezym klonie moze sie
+# nie otworzyc - a plik wyglada identycznie w diffie.
+#
+# 'binary' = -text -diff -merge: zero konwersji, zero prob diffowania i mergowania
+# (i tak nie da sie zmergowac LevelDB - patrz "Praca na dwoch maszynach" w README).
+worlds/*/db/** binary
