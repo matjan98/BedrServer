@@ -6,16 +6,19 @@
 # wiec repo moze lezec gdziekolwiek i na obu maszynach dziala identycznie.
 #
 # SYNCHRONIZACJA MIEDZY MASZYNAMI (swiat to baza LevelDB - git jej NIE zmerguje):
-#   przed startem  - jesli lokalne repo jest w tyle za origin, launcher NIE wystartuje
-#                    dopoki nie pobierzesz zmian (inaczej grasz na starym swiecie
-#                    i nastepny commit skasuje postepy z drugiej maszyny),
+#   przed startem  - AUTOMATYCZNY pull, jesli origin ma nowsze commity. Bez pytania.
+#                    Gdy pull jest niebezpieczny (niezacommitowane zmiany albo rozjazd
+#                    historii) launcher NIE startuje i mowi, co zrobic,
 #   po zatrzymaniu - swiat jest commitowany i wypychany na origin.
 #
 # Przelaczniki:
-#   -NoSync   pomin caly git (gra offline / awaryjnie). Pamietaj wtedy commitowac recznie.
+#   -NoSync     pomin caly git (gra offline / awaryjnie). Pamietaj wtedy commitowac recznie.
+#   -CheckOnly  wykonaj sam pre-flight (fetch + ewentualny pull) i zakoncz,
+#               BEZ uruchamiania serwera. Do sprawdzenia, czy jestes zsynchronizowany.
 
 param(
-    [switch]$NoSync
+    [switch]$NoSync,
+    [switch]$CheckOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -121,15 +124,16 @@ else {
                         "Najpierw ogarnij lokalne zmiany (commit albo odrzuc), potem pobierz."
                     )
                 }
-                Write-Banner @(
-                    "Origin ma $behind nowszych commitow - druga maszyna grala po tobie.",
-                    "Trzeba pobrac ich swiat, zanim zagrasz."
-                ) 'Yellow'
-                $a = Read-Host "Pobrac teraz (git pull --ff-only)? [T/n]"
-                if ($a -match '^[nN]') { Stop-WithMessage @("Przerwane. Bez pobrania grazbys na starym swiecie.") }
+                Write-Host "  Origin ma $behind nowszych commitow - pobieram ..." -ForegroundColor Yellow
                 $pullOut = Invoke-Git pull --ff-only origin $branch
-                if ($GitExit -ne 0) { Stop-WithMessage @("Pobieranie nie powiodlo sie:", $($pullOut -join ' ')) }
-                Write-Host "  Pobrano. Swiat jest aktualny." -ForegroundColor Green
+                if ($GitExit -ne 0) {
+                    Stop-WithMessage @(
+                        "POBIERANIE NIE POWIODLO SIE - nie startuje, zebys nie gral na starym swiecie.",
+                        "",
+                        $($pullOut -join ' ')
+                    )
+                }
+                Write-Banner @("Pobrano $behind commitow z origin. Swiat jest aktualny.") 'Green'
             }
             elseif ($ahead -gt 0) {
                 Write-Banner @("Masz $ahead lokalnych commitow niewypchnietych na origin. Wypchne je po stop.") 'Yellow'
@@ -143,6 +147,15 @@ else {
             }
         }
     }
+}
+
+# ---------------------------------------------------------------- tryb samego sprawdzenia
+if ($CheckOnly) {
+    Write-Banner @(
+        "Tryb -CheckOnly: pre-flight zakonczony, serwera NIE uruchamiam.",
+        "Swiat nietkniety."
+    ) 'Cyan'
+    exit 0
 }
 
 # ---------------------------------------------------------------- wylaczenie krzyzyka (X)
