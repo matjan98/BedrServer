@@ -347,18 +347,39 @@ Stąd jedna zasada: **pobierz przed grą, wypchnij po grze.** Zawsze, na obu mas
 | Sytuacja przed startem | Zachowanie |
 |---|---|
 | repo w synchronizacji | startuje normalnie |
-| origin ma nowsze commity | proponuje `git pull --ff-only`, po odmowie **nie startuje** |
+| origin ma nowsze commity | **pobiera automatycznie** (`git pull --ff-only`), bez pytania |
+| pull się nie powiódł | **nie startuje** — lepiej nie grać wcale niż na starym świecie |
 | jesteś w tyle **i** masz niezacommitowane zmiany | **nie startuje**, każe ogarnąć lokalne zmiany |
 | repo rozjechane (i w tył, i w przód) | **nie startuje**, wymaga ręcznej decyzji |
 | masz lokalne commity niewypchnięte | startuje, ostrzega, wypycha po `stop` |
 | brak sieci / `fetch` padł | pyta wprost, czy startować mimo nieznanego stanu |
 
+Pull jest **automatyczny**: odpalasz SERVER i po prostu masz aktualny świat. Blokady zostają
+tylko tam, gdzie pull byłby niebezpieczny — przy niezacommitowanych zmianach nadpisałby twoją
+pracę, a przy rozjeździe historii nie ma czego pobierać, tylko trzeba wybrać wersję świata.
+
 Po `stop` launcher robi `git add -A`, commituje jako `Sesja <data> (<NAZWA-KOMPUTERA>)` i wypycha
 na `origin`. Jeśli push padnie, commit i tak jest lokalnie — dostaniesz czerwony komunikat, żeby
 wypchnąć ręcznie przed graniem na drugiej maszynie.
 
-Awaryjnie: `Start-Server.bat` uruchomiony z przełącznikiem `-NoSync` (albo bezpośrednio
-`powershell -File start_server.ps1 -NoSync`) pomija cały git — wtedy commitujesz sam.
+Przełączniki (`powershell -File start_server.ps1 <przelacznik>`):
+
+| Przełącznik | Działanie |
+|---|---|
+| `-CheckOnly` | wykonuje sam pre-flight (fetch + ewentualny pull) i kończy, **bez uruchamiania serwera**. Do sprawdzenia, czy jesteś zsynchronizowany. |
+| `-NoSync` | pomija cały git (gra offline / awaryjnie) — wtedy commitujesz sam |
+
+### Skróty na pulpicie: SERVER i SAVE
+
+- **SERVER** → `Start-Server.bat` — pull, gra, po `stop` commit i push. Normalna droga.
+- **SAVE** → `Save.bat` — ręczny zapis (`git add -A` + commit „Save" + push).
+
+`Save.bat` **odmawia zapisu przy działającym serwerze**: LevelDB trzyma wtedy otwarte uchwyty na
+plikach świata, więc git albo rzuci błędem, albo zapisze niespójny stan bazy. To była najbardziej
+prawdopodobna przyczyna losowych błędów przy commitowaniu — a że skrypt nie miał `pause`, okno
+znikało zanim dało się przeczytać komunikat. Teraz zawsze czeka na klawisz i mówi wprost, co poszło nie tak.
+
+Przy normalnym używaniu SERVER-a **SAVE jest zbędny** — launcher commituje i wypycha sam po `stop`.
 
 ### ⚠️ Wersja BDS musi się zgadzać na obu maszynach
 
