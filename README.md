@@ -8,7 +8,7 @@ commity gitowe pełnią rolę backupów świata i konfiguracji.
 | Dodatek | Wersja bazowa | Uwagi |
 |---|---|---|
 | Canopy [BP]+[RP] (ForestOfLight) | 1.5.7 | RP ma **lokalny patch** → wersja podbita do **1.5.9** (patrz niżej); BP ma **lokalnie podbitą zależność** script API (patrz niżej) |
-| Understudy (ForestOfLight) | 1.2.3 | rozszerzenie Canopy; symulowani gracze `/simplayer:*`; ta sama podbita zależność |
+| Understudy (ForestOfLight) | 1.2.3 | rozszerzenie Canopy; symulowani gracze `/simplayer:*`; ta sama podbita zależność. Od Canopy 1.6.0 **wbudowany w Canopy** (patrz „Stan na 2026-09-08" niżej) |
 
 Wymagania: świat musi mieć włączony eksperyment **Beta APIs** (flaga `gametest` w `level.dat`) —
 bez niego skrypty Canopy i Understudy w ogóle się nie ładują (`./canopy …` leci jako zwykły czat,
@@ -32,12 +32,27 @@ Reszta zależności została bez zmian i działa: `@minecraft/server-ui 2.2.0-be
 `@minecraft/debug-utilities 1.0.0-beta`, `@minecraft/server-gametest 1.0.0-beta`.
 `min_engine_version` `[1, 26, 30]` to minimum, nie trzeba go ruszać.
 
-Gdy wyjdzie oficjalne Canopy pod 26.40 — instaluj je normalnie (procedura patcha F8 niżej),
-ręczne podbicie stanie się zbędne.
-
 **Aktualizacja 2026-08-16 (MC 26.44):** bez zmian — `2.10.0-beta` przetrwało wydanie łatkowe,
 manifesty zostały takie same, skrypty ładują się bez błędów. Podbijać trzeba dopiero przy
 następnym **minorze** (26.50), nie przy łatkach linii 26.4x.
+
+**Aktualizacja 2026-09-08 (MC 26.45):** znowu bez zmian — 26.45 to hotfix linii 26.4x,
+`2.10.0-beta` nadal istnieje, manifesty nietknięte, log startowy czysty.
+
+**Stan na 2026-09-08 — oficjalne Canopy pod 26.40 już jest:** v1.6.0 (2026-08-05) i **v1.6.1
+(2026-08-23)**, oba „for MC 26.40". **Celowo NIE zainstalowane** przy aktualizacji BDS, bo to
+osobna, większa przesiadka:
+- od 1.6.0 Understudy jest **wbudowany w Canopy** — osobna paczka `Understudy-v1.2.3` znika
+  (wpis w `world_behavior_packs.json` do usunięcia), autor nie wydał Understudy pod 26.40;
+- komendy zmieniają nazwy: `./canopy` → `/canopy`, `./info` → `/info` (vanilla commands
+  z autouzupełnianiem), `/simplayer:join` → `/canopy:playerjoin` itd.,
+  `/simplayer:claimprojectiles` usunięte na rzecz `/claimprojectiles` Canopy;
+- reguła `noSimplayerSaving` → `simplayerSaving` (domyślnie `true`); zapis ekwipunku botów
+  zmienia format (automatyczna migracja przy pierwszym starcie świata);
+- `noFog` ma w 1.6.1 poprawioną obsługę błędów — lokalny patch nr 2 stałby się zbędny;
+- ręczne podbicie `2.10.0-beta` stałoby się zbędne (autor celuje w 26.40).
+Przy przesiadce: procedura patcha F8 niżej + aktualizacja ściągi Understudy niżej.
+Wydania: `https://github.com/ForestOfLight/Canopy/releases`.
 
 ### ⚠️ LOKALNY PATCH nr 2: Canopy [BP] → `scripts/src/rules/infodisplay/NoFog.js`
 
@@ -148,7 +163,44 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
 - `max-threads=0` = użyj wszystkich wątków CPU (generowanie terenu itp.).
 - Laptop: na czas serwowania plan zasilania „Wysoka wydajność", zasilacz podpięty,
   **zamknięcie klapy ustawić na „nic nie rób"** (uśpienie = ubity serwer bez zapisu).
-- Git z historią świata rośnie — pilnuj wolnego miejsca na C: (2026-07-23: 95 GB wolne).
+- Git z historią świata rośnie — pilnuj wolnego miejsca na C: (2026-07-23: 95 GB wolne;
+  2026-09-08 na FASTA-BYDLAKA: 329 GB wolne).
+
+## Historia: aktualizacja 26.44 → 26.45 (2026-09-08, FASTA-BYDLAKA)
+
+Klient ze Store zaktualizował się do **1.26.4501.0 (26.45)**, serwer został na **1.26.44.3**
+i przy wejściu pokazywał „The host you are trying to join is using an older version of Minecraft".
+`packet-statistics.txt` z sesji 03:40 miał dokładnie sygnaturę z „Procedury aktualizacji BDS"
+(1× `RequestNetworkSettingsPacket` na wejściu, `PlayStatusPacket` + `DisconnectPacket` na wyjściu).
+
+- Serwer podniesiony do **BDS 1.26.45.1** (`bedrock-server-1.26.45.1.zip`, 94 995 981 B,
+  SHA256 `B27216DD32D034F3BC5FBE3094A70D2B3CEC9A9871CA3D7B46A2B8690A1C0B14`, plik na CDN
+  z 2026-08-28). Z logu: `Build ID: 49559486`, `Branch: r/26_u4`, `Commit ID: 0dc2e0d8…`.
+- **26.45 to hotfix linii 26.4x** (changelog Mojanga „26.44/45 Hotfix", 20 sierpnia 2026), więc
+  `@minecraft/server 2.10.0-beta` nadal istnieje — manifesty Canopy/Understudy **nietknięte**,
+  oba lokalne patche przetrwały (paczki dodatków porównane z kopią: bajt w bajt).
+- Silnik: `config\`, `definitions\`, `data\` **identyczne** z 26.44. Jedyna zmiana w paczkach:
+  `vanilla_1.26.44` → `vanilla_1.26.45` (BP i RP). **Sierota:** `vanilla_1.26.44` w obu
+  katalogach — przeniesiona do kopii (`bds_work\backup-przed-26.45\orphans\`). Wniosek: hotfix
+  też podmienia folder `vanilla_*`, sieroty trzeba sprawdzać przy każdej aktualizacji.
+- `server.properties`: 41 kluczy po obu stronach, zero różnic. `packetlimitconfig.json`,
+  `profanity_filter.wlist`, `release-notes.txt`, `bedrock_server_how_to.html` — identyczne z 26.44.
+- Dwa kontrolowane starty (03:58 i 03:59), oba czyste: `Version: 1.26.45.1`,
+  `Experiment(s) active: gtst`, obie paczki w Pack Stack, `[Canopy] Registered Understudy v1.2.3.`,
+  `Quit correctly`, kod wyjścia 0. Świat zmigrowany (`lastOpenedWithVersion = 1.26.45.1`) —
+  **SPEEDY-LAPTOP musi dostać 1.26.45.1 przed swoim `git pull`** (patrz „Wersja BDS musi się
+  zgadzać na obu maszynach").
+- **Test w grze jeszcze nie zrobiony** (wejście klientem, `./info coords true` + F8,
+  `/simplayer:join`) — do sprawdzenia przy pierwszej sesji.
+- Drugi start był potrzebny przez pułapkę w skrypcie testowym: `Process.WaitForExit(timeout)`
+  nie czeka na opróżnienie asynchronicznego stdout — log urwał się przed `Registered Understudy`
+  i `Quit correctly`, choć serwer zamknął się poprawnie (opis w „Przydatnych faktach").
+  Poprawiony skrypt: `C:\Users\<user>\bds_work\controlled-start.ps1` (poza repo, na FASTA-BYDLAKA).
+- Resztki po starszych wersjach BDS, których nie ma już w paczce Mojanga, a robocopy bez `/MIR`
+  ich nie usuwa: `behavior_packs/experimental_vanilla_shapes` (`shapes/`, `__brarchive/`),
+  `behavior_packs/vanilla_1.26.30/structures/sulfur_spring`, `resource_packs/chemistry/__brarchive/*`,
+  `definitions/sdl_layouts/deprecated_MultiItemPage_PersonaCharacterCreator.json`. Nieszkodliwe
+  (serwer chodził z nimi na 26.40 i 26.44), zostawione.
 
 ## Historia: aktualizacja 26.40 → 26.44 (2026-08-16)
 
@@ -269,7 +321,8 @@ Kroki:
    Zamiast tego porównaj zestaw kluczy naszego `server.properties` z domyślnym z paczki i dopisz
    te, które doszły (przy 26.32 → 26.40 nie doszedł żaden).
 5. Sprawdź „sieroty": paczki `vanilla_*`/`chemistry_*`, które są lokalnie, a nie ma ich w nowym
-   zipie, przenieś do kopii zapasowej (przy 26.40 taką sierotą był `vanilla_1.26.32`).
+   zipie, przenieś do kopii zapasowej (przy 26.40 taką sierotą był `vanilla_1.26.32`,
+   przy 26.45 — `vanilla_1.26.44` w BP i RP; hotfixy też podmieniają folder `vanilla_*`).
 6. Podbij zależność `@minecraft/server` w manifestach Canopy i Understudy, jeśli nie ma jeszcze
    wydania autora pod nową wersję MC (patrz sekcja o script API wyżej).
 7. Kontrolowany start i weryfikacja logu — w logu mają być `Version: <nowa>`,
@@ -289,6 +342,10 @@ Kroki:
 - Ścieżki z `[BP]`/`[RP]` w PowerShellu wymagają `-LiteralPath` (nawiasy to wildcardy!).
 - Konsola przez pipe'y wymaga drenowania stdout **i** stderr (inaczej deadlock przy włączonym
   `content-log-console-output`).
+- ⚠️ **`Process.WaitForExit(timeout)` nie opróżnia asynchronicznego stdout/stderr** (.NET).
+  Po wyjściu procesu wywołaj jeszcze bezparametrowe `WaitForExit()` i odczekaj, aż kolejka
+  eventów PowerShella (`Register-ObjectEvent … -Action`) przestanie rosnąć — inaczej przechwycony
+  log kończy się przed `Quit correctly`, mimo że serwer zamknął się poprawnie (2026-09-08).
 - ⚠️ **Pułapka BOM przy sterowaniu serwerem ze skryptu (.NET/PowerShell).** `Process.StandardInput`
   tworzy `StreamWriter` z `AutoFlush = true`, a setter `AutoFlush` robi natychmiastowy flush —
   preambuła UTF-8 (`EF BB BF`) leci do potoku **już przy pierwszym odczytaniu właściwości**, zanim
