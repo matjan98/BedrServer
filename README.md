@@ -164,7 +164,86 @@ Nowa wersja Canopy **nadpisze/zgubi patch** — po każdej aktualizacji trzeba g
 - Laptop: na czas serwowania plan zasilania „Wysoka wydajność", zasilacz podpięty,
   **zamknięcie klapy ustawić na „nic nie rób"** (uśpienie = ubity serwer bez zapisu).
 - Git z historią świata rośnie — pilnuj wolnego miejsca na C: (2026-07-23: 95 GB wolne;
-  2026-09-08 na FASTA-BYDLAKA: 329 GB wolne).
+  2026-09-08 na FASTA-BYDLAKA: 329 GB wolne; **2026-09-11 na SPEEDY-LAPTOP: 48 GB wolne** —
+  to już warto obserwować).
+
+## Historia: SPEEDY-LAPTOP dogania 26.45 (2026-09-11)
+
+**Nie była to aktualizacja Minecrafta, tylko rozjazd między maszynami.** Repo (świat, paczki,
+`config`/`data`/`definitions`) było już na 1.26.45.1 od commita `2b91541`, ale `bedrock_server.exe`
+jest w `.gitignore` — **git nie synchronizuje binarki**, więc SPEEDY-LAPTOP siedział nadal na
+**1.26.40.8** (build z 2026-07-30). Klient ze Store 1.26.4501.0 odrzucany na handshake'u,
+`packet-statistics.txt` z sesji 01:18 z podręcznikową sygnaturą (2× `RequestNetworkSettingsPacket`
+na wejściu, `PlayStatusPacket` + `DisconnectPacket` na wyjściu).
+
+### ⚠️ Kolejność została złamana — i warto wiedzieć, czym to się skończyło
+
+2026-09-11 o 01:18 stary serwer **26.40.8 otworzył świat zmigrowany wcześniej do 26.45.1**
+i cofnął `lastOpenedWithVersion` na `[1,26,40,8,0]`. Dokładnie ten scenariusz, przed którym
+ostrzega „Wersja BDS musi się zgadzać na obu maszynach". Przed podniesieniem serwera świat został
+**przeaudytowany bajtowo** i wyszedł z tego **bez uszczerbku**:
+
+- eksperyment `gametest` nadal włączony (identycznie jak w 5 sprawdzonych rewizjach gita);
+- cała baza LevelDB przeskanowana: 47 plików `.ldb`, 2746 bloków, **0 błędnych CRC32C**;
+- wszystkie 15 383 chunki mają `ChunkVersion = 42`, 141 928 subchunków `storage version 9`,
+  **zero kluczy legacy (0x76)** — 26.40.8 nie zdegradowało formatu;
+- paleta bloków z identycznym stemplem `version` `0x01153C21` w czterech porównanych sesjach;
+- numery sekwencji LevelDB ciągłe (26.45.1 skończyło na 33458717, 26.40.8 zaczęło od 33458718) —
+  baza się nie cofnęła; rekord `player_server_*` w ogóle nietknięty przez stary serwer.
+
+**Wniosek: to zadziałało, ale nie polegaj na tym.** Bedrock nie obiecuje zgodności wstecz —
+tu format zapisu akurat się nie zmienił między 26.40 a 26.45 (obie z gałęzi `r/26_u4`).
+Przy przeskoku przez minor (26.4x → 26.50) tego założenia już nie będzie.
+
+### Przebieg
+
+- Kopia zapasowa poza repo: `bds_work\backup-przed-26.45-SPEEDY\` (290,8 MB — świat,
+  `server.properties`, `allowlist.json`, `permissions.json`, stara binarka jako
+  `bedrock_server-1.26.40.8.exe`, manifesty Canopy/Understudy).
+  ⚠️ **Ta kopia zawiera świat PO zejściu na 26.40.8**, nie stan ze stemplem 26.45.1 —
+  ten drugi jest wyłącznie w gicie (commit `cbe57f4`).
+- `bedrock-server-1.26.45.1.zip` pobrany z oficjalnego API, **94 995 981 B, SHA256 `B27216DD…`**
+  — zgodny co do bajtu z tym, którego użyła FASTA-BYDLAKA. To ten sam plik, nie „taka sama wersja".
+- Podmieniona **wyłącznie** binarka. Porównanie SHA256 paczki z repo: **9965 plików silnika,
+  0 różnic, 0 braków** — `config`, `data`, `definitions`, `behavior_packs`, `resource_packs`
+  przyszły już gitem i były kompletne. Żadnego robocopy nie trzeba było robić.
+  Rozmiar exe: 219 248 496 B (26.40.8) → **219 384 144 B** (26.45.1).
+- Kontrolowany start czysty: `Version: 1.26.45.1`, `Build ID: 49559486`, `Branch: r/26_u4`,
+  `Commit ID: 0dc2e0d8…` (te same co na FASTA-BYDLAKA), `Experiment(s) active: gtst`,
+  obie paczki w Pack Stack, `[Canopy] Registered Understudy v1.2.3.`, `Quit correctly`, kod 0.
+  Trzy `WARN` o aliasach `tp`/`stop`/`claimprojectiles` — normalne. **Nie było** błędu
+  `[SimplayerRejoining] Error parsing simplayersToRejoin DP`.
+- Oba lokalne patche nietknięte — `git diff 2b91541 HEAD` na `Canopy[BP]`, `Canopy[RP]`
+  i `Understudy-v1.2.3` jest **pusty**, czyli dokładnie te bajty wystartowały już czysto
+  na 1.26.45.1 po drugiej stronie. Wersja RP `[1,5,9]` zgodna we wszystkich trzech miejscach.
+- `server.properties`: zestaw kluczy identyczny z domyślnym z paczki, nic nie doszło.
+- **Test w grze nadal niezrobiony** — ani tu, ani na FASTA-BYDLAKA. Do sprawdzenia przy
+  pierwszej sesji: wejście klientem, `./info coords true` + F8, `/simplayer:join`.
+
+### `controlled-start.ps1` jest teraz na obu maszynach
+
+Skrypt kontrolowanego startu (`bds_work\controlled-start.ps1`, poza repo) został napisany również
+na SPEEDY-LAPTOP. Obsługuje obie udokumentowane pułapki (BOM na `StandardInput`,
+`WaitForExit(timeout)` nieopróżniające stdout) i **nie ma w nim `Kill()`** — gdy serwer nie wyjdzie,
+zostawia proces i mówi o tym, zamiast uszkodzić LevelDB.
+
+Uwaga przy czytaniu logu: skrypt celowo wysyła wiodący pusty wiersz (żeby ewentualny BOM poszedł
+jako osobna, śmieciowa linia), więc w logu **zawsze** pojawi się jedno
+`[ERROR] Unknown command: .` — to jest właśnie ta linia, nie usterka.
+
+### ⚠️ Ta aktualizacja ma krótki termin ważności
+
+**MC 26.50 „Wilderness Bound" ma datę wydania 2026-09-15** — cztery dni po tej aktualizacji.
+To **minor**, nie hotfix linii 26.4x, więc wracają obie rzeczy naraz: klient znów przestanie
+wchodzić na serwer, a `@minecraft/server 2.10.0-beta` najpewniej zniknie i manifesty Canopy
+i Understudy trzeba będzie podbić ręcznie (patrz sekcja o script API na górze).
+W dokumentacji kanał beta jest już na `2.12.0-beta`, a `2.10.0` przeszło na rc.
+
+Stan wydań dodatków na 2026-09-11: Canopy nadal **nie ma wydania pod 26.45** (najnowsze **v1.6.1**
+z 2026-08-23 celuje w 26.40). Repozytorium Understudy jest **zarchiwizowane** — to zamknięty
+rozdział, funkcjonalność żyje dalej wbudowana w Canopy od 1.6.0. Dodatkowo: **repo Canopy nie
+zawiera już paczki RP**, więc przy przesiadce patch F8 trzeba będzie wyciągnąć z pliku `.mcaddon`,
+a nie z drzewa repozytorium.
 
 ## Historia: aktualizacja 26.44 → 26.45 (2026-09-08, FASTA-BYDLAKA)
 
@@ -189,7 +268,9 @@ i przy wejściu pokazywał „The host you are trying to join is using an older 
   `Experiment(s) active: gtst`, obie paczki w Pack Stack, `[Canopy] Registered Understudy v1.2.3.`,
   `Quit correctly`, kod wyjścia 0. Świat zmigrowany (`lastOpenedWithVersion = 1.26.45.1`) —
   **SPEEDY-LAPTOP musi dostać 1.26.45.1 przed swoim `git pull`** (patrz „Wersja BDS musi się
-  zgadzać na obu maszynach").
+  zgadzać na obu maszynach"). — *Kolejność została odwrócona: SPEEDY-LAPTOP pociągnął świat
+  2026-09-11 i otworzył go jeszcze na 26.40.8. Domknięte tego samego dnia, przebieg i audyt
+  świata w sekcji „SPEEDY-LAPTOP dogania 26.45" wyżej.*
 - **Test w grze jeszcze nie zrobiony** (wejście klientem, `./info coords true` + F8,
   `/simplayer:join`) — do sprawdzenia przy pierwszej sesji.
 - Drugi start był potrzebny przez pułapkę w skrypcie testowym: `Process.WaitForExit(timeout)`
@@ -340,6 +421,12 @@ Kroki:
   GitHuba — po kilku aktualizacjach push zacząłby się wywalać na „over data quota". Repo jest
   backupem **świata i konfiguracji**; binarkę pobierasz na nowo (link w procedurze wyżej).
 - Ścieżki z `[BP]`/`[RP]` w PowerShellu wymagają `-LiteralPath` (nawiasy to wildcardy!).
+- ⚠️ **`server.properties` nie kończy się znakiem nowej linii** (ostatni bajt to `d` z
+  `auto-attach=disabled`). Dopisanie nowego klucza przez `>>` albo `Add-Content` **sklei go
+  z ostatnią linią** — powstanie `auto-attach=disablednowy-klucz=wartosc` i oba klucze
+  przepadną. Krok 4 „Procedury aktualizacji BDS" każe dopisywać klucze, które doszły w nowej
+  wersji, więc to pułapka czekająca na pierwszą wersję, która faktycznie coś doda
+  (do 26.45 zestaw 41 kluczy nie zmienił się ani razu). Najpierw dopisz `\n`.
 - Konsola przez pipe'y wymaga drenowania stdout **i** stderr (inaczej deadlock przy włączonym
   `content-log-console-output`).
 - ⚠️ **`Process.WaitForExit(timeout)` nie opróżnia asynchronicznego stdout/stderr** (.NET).

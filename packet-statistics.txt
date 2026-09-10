@@ -1,5 +1,5 @@
 
-Network Stats for the last 49 seconds:
+Network Stats for the last 18 seconds:
 
 Total Sent Spatial Packets: 0
 Total Requested to Send Spatial Packets: 0
@@ -7,10 +7,7 @@ Total Sent Actor Motion Hints Packets: 0
 Percentage of Usual Bandwidth Used: -nan(ind)%
 
 
-Total Sent: 4, 0B (20B)
-2   PlayStatusPacket             10B, Num 2, Avg 5B
-5   DisconnectPacket             10B, Num 2, Avg 5B
+Total Sent: 0, 0B (0B)
 
-Total Received: 2, 0B (12B)
-193 RequestNetworkSettingsPacket 12B, Num 2, Avg 6B
+Total Received: 0, 0B (0B)
 
