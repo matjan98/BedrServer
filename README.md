@@ -39,6 +39,16 @@ następnym **minorze** (26.50), nie przy łatkach linii 26.4x.
 **Aktualizacja 2026-09-08 (MC 26.45):** znowu bez zmian — 26.45 to hotfix linii 26.4x,
 `2.10.0-beta` nadal istnieje, manifesty nietknięte, log startowy czysty.
 
+**Aktualizacja 2026-09-15 (MC 26.50.5):** BDS został podniesiony z `1.26.45.1` do
+`1.26.50.5`. To pierwszy minor po 26.40, więc aktywna beta skryptowego API zmieniła się
+na `@minecraft/server 2.11.0-beta`, a `@minecraft/server-ui` na `2.3.0-beta`.
+Zależności w Canopy BP i Understudy zostały podbite ręcznie, bo nie ma jeszcze oficjalnego
+wydania Canopy pod MC 26.50. `transport=nethernet` jest wymagany przez ten BDS i został
+ustawiony w `server.properties`. Kontrolowany start właściwego świata przeszedł czysto:
+`Version: 1.26.50.5`, `Experiment(s) active: gtst`, oba dodatki w Pack Stack,
+`[Canopy] Registered Understudy v1.2.3`, `Quit correctly`. Test wejścia klientem,
+`./info coords true` + F8 oraz `/simplayer:join` pozostaje do wykonania w grze.
+
 **Stan na 2026-09-08 — oficjalne Canopy pod 26.40 już jest:** v1.6.0 (2026-08-05) i **v1.6.1
 (2026-08-23)**, oba „for MC 26.40". **Celowo NIE zainstalowane** przy aktualizacji BDS, bo to
 osobna, większa przesiadka:
@@ -245,6 +255,25 @@ rozdział, funkcjonalność żyje dalej wbudowana w Canopy od 1.6.0. Dodatkowo: 
 zawiera już paczki RP**, więc przy przesiadce patch F8 trzeba będzie wyciągnąć z pliku `.mcaddon`,
 a nie z drzewa repozytorium.
 
+## Historia: aktualizacja 26.45.1 -> 26.50.5 (2026-09-15, SPEEDY-LAPTOP)
+
+- Backup wykonano przed migracją w `C:\Users\Mateusz\bds_work\backup-przed-26.50-SPEEDY\`.
+  Kopia świata ma 147 plików i 211 910 897 bajtów.
+- Paczka BDS została pobrana z oficjalnego API, rozpakowana poza repozytorium i zweryfikowana.
+  ZIP: 85 764 562 bajty, SHA256 `21B35DC1907EB448CBE27C35A688C592E4CCA4492A9A1C179F5F7D84B25B336D`.
+- Pliki silnika skopiowano przez `robocopy /E`, bez `/MIR`. Zachowano `Canopy[BP]`,
+  `Canopy[RP]`, Understudy i oba lokalne patche. Sieroty `vanilla_1.26.45` z BP i RP
+  przeniesiono do `backup-przed-26.50-SPEEDY\orphans\`.
+- `server.properties` nadal ma 41 kluczy, bez różnic w zestawie względem nowej paczki;
+  zmieniono tylko transport z `raknet` na wymagany `nethernet`.
+- Zależności w manifestach: `@minecraft/server 2.11.0-beta` w Canopy i Understudy oraz
+  `@minecraft/server-ui 2.3.0-beta` w Canopy. Canopy v1.6.x nie instalowano - to osobna,
+  większa migracja z wbudowanym Understudy i zmienionymi komendami.
+- Log kontrolowanego startu: `C:\Users\Mateusz\bds_work\controlled-start-20260915-26.50.log`.
+  Świat zmigrował się na nowym BDS, serwer wystartował i zakończył się przez `stop` z
+  `Quit correctly`. Jedyny wpis `Unknown command: .` jest oczekiwanym skutkiem ubocznym
+  obejścia BOM w skrypcie kontrolowanego startu.
+
 ## Historia: aktualizacja 26.44 → 26.45 (2026-09-08, FASTA-BYDLAKA)
 
 Klient ze Store zaktualizował się do **1.26.4501.0 (26.45)**, serwer został na **1.26.44.3**
@@ -421,12 +450,10 @@ Kroki:
   GitHuba — po kilku aktualizacjach push zacząłby się wywalać na „over data quota". Repo jest
   backupem **świata i konfiguracji**; binarkę pobierasz na nowo (link w procedurze wyżej).
 - Ścieżki z `[BP]`/`[RP]` w PowerShellu wymagają `-LiteralPath` (nawiasy to wildcardy!).
-- ⚠️ **`server.properties` nie kończy się znakiem nowej linii** (ostatni bajt to `d` z
-  `auto-attach=disabled`). Dopisanie nowego klucza przez `>>` albo `Add-Content` **sklei go
-  z ostatnią linią** — powstanie `auto-attach=disablednowy-klucz=wartosc` i oba klucze
-  przepadną. Krok 4 „Procedury aktualizacji BDS" każe dopisywać klucze, które doszły w nowej
-  wersji, więc to pułapka czekająca na pierwszą wersję, która faktycznie coś doda
-  (do 26.45 zestaw 41 kluczy nie zmienił się ani razu). Najpierw dopisz `\n`.
+- ⚠️ W stanie sprzed aktualizacji 26.50 `server.properties` nie kończył się znakiem nowej
+  linii (ostatni bajt to `d` z `auto-attach=disabled`). Przy aktualizacji zapisano go już z
+  końcowym `\n`. Przed dopisywaniem kluczy do kolejnej paczki zawsze sprawdź końcówkę pliku;
+  zapis bez separatora skleiłby nowy klucz z ostatnią linią.
 - Konsola przez pipe'y wymaga drenowania stdout **i** stderr (inaczej deadlock przy włączonym
   `content-log-console-output`).
 - ⚠️ **`Process.WaitForExit(timeout)` nie opróżnia asynchronicznego stdout/stderr** (.NET).
