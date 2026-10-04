@@ -49,12 +49,6 @@ ustawiony w `server.properties`. Kontrolowany start właściwego świata przesze
 `[Canopy] Registered Understudy v1.2.3`, `Quit correctly`. Test wejścia klientem,
 `./info coords true` + F8 oraz `/simplayer:join` pozostaje do wykonania w grze.
 
-**Aktualizacja 2026-10-04 (MC 26.52.3):** hotfix linii 26.50 — bez zmian w manifestach.
-`@minecraft/server 2.11.0-beta` i `server-ui 2.3.0-beta` mają buildy `26.52-stable` w npm,
-a log startowy jest czysty (bez błędów skryptów). **Następny minor (26.60) najpewniej to
-zmieni:** w npm beta jest już `2.12.0-beta`, a `2.11.0` przeszło na rc — wtedy manifesty trzeba
-będzie podbić do `2.12.0-beta` (albo stabilnego `2.11.0`).
-
 **Stan na 2026-09-08 — oficjalne Canopy pod 26.40 już jest:** v1.6.0 (2026-08-05) i **v1.6.1
 (2026-08-23)**, oba „for MC 26.40". **Celowo NIE zainstalowane** przy aktualizacji BDS, bo to
 osobna, większa przesiadka:
@@ -260,37 +254,6 @@ z 2026-08-23 celuje w 26.40). Repozytorium Understudy jest **zarchiwizowane** �
 rozdział, funkcjonalność żyje dalej wbudowana w Canopy od 1.6.0. Dodatkowo: **repo Canopy nie
 zawiera już paczki RP**, więc przy przesiadce patch F8 trzeba będzie wyciągnąć z pliku `.mcaddon`,
 a nie z drzewa repozytorium.
-
-## Historia: aktualizacja 26.50.5 -> 26.52.3 (2026-10-04, FASTA-BYDLAKA)
-
-Powód: klient znów wyprzedził serwer (to hotfix, protokół 2193 jak w 26.50/26.51).
-
-- Backup przed migracją: `C:\Users\Mateusz\bds_work\backup-przed-26.52-FASTA-BYDLAKA\`
-  (świat: 105 plików, 169 094 707 bajtów; plus `bedrock_server-1.26.50.5.exe`).
-- ZIP: 85 766 941 bajtów, SHA256 `2C9B98D07D2504786996F2335980E88BD969B4A77514925E75471A1349995825`.
-  API Mojang nie publikuje sumy kontrolnej — sprawdzono CRC wszystkich wpisów zipa oraz podpis
-  Authenticode exe (Valid). SHA256 nowego exe: `19C88569AF2E4B7D984E999055A31CBCB0799DACF8BBBF7371EDA42F5772A443`.
-- Realna różnica względem 26.50.5 jest minimalna: zmienił się tylko `bedrock_server.exe`
-  i doszły dwa pakiety-manifesty `behavior_packs\vanilla_1.26.52` oraz `resource_packs\vanilla_1.26.52`.
-  `vanilla_1.26.50` nadal jest w paczce (to NIE sierota — nie przenosić). `server.properties` z paczki
-  jest bajt w bajt taki sam jak w 26.50.5, więc nie było czego scalać. Po kopiowaniu (`robocopy /E`)
-  wszystkie 3020 plików silnika zgadza się z paczką; `Canopy[BP]`, `Canopy[RP]`, Understudy,
-  `server.properties`, `permissions.json` i oba `world_*_packs.json` nietknięte.
-- Stare pliki-sieroty (zostawione celowo): repo trzyma ok. 7,8 tys. luźnych plików (~34 MB) z dawnych paczek,
-  których 26.50+ już nie dostarcza luzem (tylko jako `__brarchive`) — m.in. całe
-  `behavior_packs\experimental_y_2026_drop_3` (662 pliki) i luźne `entities/recipes/features`
-  w `vanilla_*`/`chemistry_*`. Serwer startuje z nimi czysto, więc ich NIE ruszano; lista:
-  `C:\Users\Mateusz\bds_work\dryrun-26.52.3-orphans-detail.csv`.
-- Log kontrolowanego startu: `C:\Users\Mateusz\bds_work\controlled-start-26.52.log` — `Version: 1.26.52.3`,
-  `Experiment(s) active: gtst`, oba dodatki w Pack Stack, `[Canopy] Registered Understudy v1.2.3`,
-  trzy WARN-y o aliasach (`claimprojectiles`, `tp`, `stop` — normalne), jedno `Unknown command: .`
-  (obejście BOM), `Quit correctly`, kod 0, pusty stderr. `level.dat`: `lastOpenedWithVersion` = 1.26.52.3.0.
-- **SPEEDY-LAPTOP musi zainstalować BDS 1.26.52.3 PRZED pobraniem tego świata** — świat został
-  zmigrowany, a starszy serwer go nie otworzy. Binarki nie ma w gicie (patrz „Procedura aktualizacji BDS").
-- Canopy v1.6.2 (2026-09-16, „for MC 26.50") istnieje, ale celowo NIE zainstalowane — to ta sama,
-  osobna migracja co v1.6.0/v1.6.1. Zmienia m.in. `Canopy[RP]/ui/hud_screen.json`, więc lokalny patch F8
-  trzeba by przy niej przemyśleć od nowa.
-- Test w grze (`./info coords true` + F8 oraz `/simplayer:join`) nie był jeszcze wykonany w chwili zapisu tej notatki.
 
 ## Historia: aktualizacja 26.45.1 -> 26.50.5 (2026-09-15, SPEEDY-LAPTOP)
 
