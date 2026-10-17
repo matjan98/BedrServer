@@ -7,7 +7,7 @@ commity gitowe pełnią rolę backupów świata i konfiguracji.
 
 | Dodatek | Wersja bazowa | Uwagi |
 |---|---|---|
-| Canopy [BP]+[RP] (ForestOfLight) | 1.5.7 | RP ma **lokalny patch** → wersja podbita do **1.5.9** (patrz niżej); BP ma **lokalnie podbitą zależność** script API (patrz niżej) |
+| Canopy [BP]+[RP] (ForestOfLight) | 1.5.7 | RP ma **lokalny patch** - wersja podbita do **1.5.10** (patrz niżej); BP ma **lokalnie podbitą zależność** script API (patrz niżej) |
 | Understudy (ForestOfLight) | 1.2.3 | rozszerzenie Canopy; symulowani gracze `/simplayer:*`; ta sama podbita zależność. Od Canopy 1.6.0 **wbudowany w Canopy** (patrz „Stan na 2026-09-08" niżej) |
 
 Wymagania: świat musi mieć włączony eksperyment **Beta APIs** (flaga `gametest` w `level.dat`) —
@@ -108,12 +108,34 @@ F8 steruje tylko widocznością po stronie klienta.
 Efekt uboczny: zwykłe tytuły `/title` też są widoczne tylko przy włączonym paperdollu
 (na prywatnym serwerze bez znaczenia).
 
-Wersja RP jest podbita o +2 względem oryginału (historia: 1.5.8 = filtr „!" dla Star'sa,
-1.5.9 = obecny binding paperdolla), spójnie w **trzech** miejscach:
+Wersja RP jest podbita do 1.5.10 (historia: 1.5.8 = filtr „!" dla Star'sa,
+1.5.9 = binding paperdolla, 1.5.10 = zgodność HUD z MC 26.50 i wymuszenie nowego pobrania),
+spójnie w **trzech** miejscach:
 
-1. `resource_packs/Canopy[RP]/manifest.json` → `header.version` = `[1, 5, 9]`
-2. `behavior_packs/Canopy[BP]/manifest.json` → `dependencies` (uuid `bcf34368-…`) = `[1, 5, 9]`
-3. `worlds/moj_swiat/world_resource_packs.json` → wpis `bcf34368-…` = `[1, 5, 9]`
+1. `resource_packs/Canopy[RP]/manifest.json` - `header.version` = `[1, 5, 10]`
+2. `behavior_packs/Canopy[BP]/manifest.json` - zależność RP (uuid `bcf34368-ed0c-4cf7-938e-582cccf9950d`) = `[1, 5, 10]`
+3. `worlds/moj_swiat/world_resource_packs.json` - wpis tego RP = `[1, 5, 10]`
+
+### Poprawka HUD i cache klienta (2026-10-17, SPEEDY-LAPTOP)
+
+Zachowano Canopy BP 1.5.7 i Understudy 1.2.3. Do istniejącego RP przeniesiono poprawkę
+[Canopy PR #108](https://github.com/ForestOfLight/Canopy/pull/108): `hud_title_text` ma typ
+`stack_panel`, `orientation: vertical`, rozmiar `["100%c", "100%c"]` i offset `[-5, 4]`.
+Mała etykieta (`font_size: normal`, skala 0.85) oraz binding F8/paperdolla pozostały.
+Przy kolejnych aktualizacjach zachowaj zgodny typ kontrolki i ten binding.
+
+Klient Minecraft 1.26.5203.0 miał niepełny cache Canopy RP 1.5.9 w
+`%TEMP%\Minecraft Bedrock\minecraftpe\packcache\resource\Dp5YWjCR7jo=`:
+z 34 plików serwerowej paczki pozostał tylko `manifest.json`; katalog `ui` był pusty.
+Przy zamkniętej grze wadliwy katalog przeniesiono do kopii zapasowej poza repo.
+RP 1.5.10 wymusza świeże pobranie przy kolejnym wejściu na serwer.
+Nie ustalono, co usunęło pliki cache. Na innych komputerach niczego nie czyszczono.
+
+Kontrolowany start po poprawce: BDS 1.26.50.5, eksperyment `gtst`, obie paczki BP
+załadowane, `[Canopy] Registered Understudy v1.2.3.`, `Quit correctly`, kod wyjścia 0.
+Nie było błędów zależności dodatków. Pusta komenda z wrappera dała znany, opisany niżej
+`Unknown command: .`; trzy ostrzeżenia o aliasach Understudy były oczekiwane.
+Minecraft pozostał zamknięty: końcowy test wyglądu panelu i F8 wymaga wejścia do gry.
 
 ### 🔁 Procedura przy KAŻDEJ aktualizacji Canopy
 
